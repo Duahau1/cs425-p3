@@ -21,10 +21,6 @@ uint8_t bound_prefix(uint8_t prefix)
 
 static bool append_digit_to_octet(char digit_char, uint32_t max, uint32_t *octet_value)
 {
-  if (digit_char < '0' || digit_char > '9')
-  {
-    return false;
-  }
 
   uint32_t digit = (uint32_t)(digit_char - '0');
 

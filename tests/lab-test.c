@@ -40,6 +40,7 @@ static void test_ip_parse(void)
   TEST_ASSERT_FALSE(ip_parse("192.168.256.1", &addr));   // Octet > 255
   TEST_ASSERT_FALSE(ip_parse("192.168.1.10a", &addr));   // Trailing invalid char
   TEST_ASSERT_FALSE(ip_parse("abc.def.ghi.jkl", &addr)); // Non-digits
+  TEST_ASSERT_FALSE(ip_parse("x.0.0.0", &addr));         // Invalid first character in an octet
   TEST_ASSERT_FALSE(ip_parse("192..1.10", &addr));       // Missing octet / double dot
 }
 
