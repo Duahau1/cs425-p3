@@ -23,7 +23,7 @@ Test passed with 100% coverage with no leak.
 
 ## Experience
 
-In this project I used AI heavily and then I ran out of all tokens on my pro Copilot account. Since it is almost the end of the month so I decided to upgraded my account and used Gemini instead which I think is not as good but the logic was not that hard so the overall result turned out to be fine. The project would have take 4 hours longer if I did not use AI, but thanks to AI it only took me like 3 hours to finish the whole thing.
+In this project I used AI heavily and then I ran out of all tokens on my pro Copilot account. Since it is almost the end of the month so I decided to upgraded my account and used Gemini instead which I think is not as good but the logic was not that hard so the overall result turned out to be fine. The project would have take 4 hours longer if I did not use AI, but thanks to AI it only took me like 3.5 hours to finish the whole thing. 
 
 ## Design
 
