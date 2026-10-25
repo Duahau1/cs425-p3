@@ -215,6 +215,7 @@ static void test_route_parse(void)
   TEST_ASSERT_FALSE(route_parse("192.168.1.0/24 direct", &r));                  // missing device field
   TEST_ASSERT_FALSE(route_parse("192.168.1.0/24 direct eth0 extra_field", &r)); // too many fields
   TEST_ASSERT_FALSE(route_parse("192.168.1.0/24 direct eth invalid", &r));      // whitespace inside device name
+  TEST_ASSERT_FALSE(route_parse("192.168.1.0/24 direct eth0\rname", &r));       // control whitespace inside device name
 }
 
 static void test_fwd_table_operations(void)
@@ -280,6 +281,10 @@ static void test_fwd_table_operations(void)
   fprintf(tmp, "# Comment line\n");
   fprintf(tmp, "  \n"); // Blank line
   fprintf(tmp, "10.0.0.0/8 direct eth3\n");
+  rewind(tmp);
+  TEST_ASSERT_TRUE(table_load(loaded_table, tmp, &bad_line));
+  TEST_ASSERT_EQUAL_INT(0, bad_line);
+  TEST_ASSERT_EQUAL_INT(1, table_count(loaded_table));
   fclose(tmp);
 
   // Test table_load with invalid file / arguments
@@ -296,6 +301,15 @@ static void test_fwd_table_operations(void)
   TEST_ASSERT_FALSE(table_load(loaded_table, bad_tmp, &failed_line_num));
   TEST_ASSERT_EQUAL_INT(2, failed_line_num);
   fclose(bad_tmp);
+
+  // A directory stream fails when getline attempts to read it.
+  FILE *error_stream = fopen(".", "r");
+  TEST_ASSERT_NOT_NULL(error_stream);
+  size_t io_error_line = 1;
+  TEST_ASSERT_FALSE(table_load(loaded_table, error_stream, &io_error_line));
+  TEST_ASSERT_EQUAL_INT(0, io_error_line);
+  TEST_ASSERT_TRUE(ferror(error_stream));
+  fclose(error_stream);
 
   // Clean up
   table_destroy(table);

@@ -39,16 +39,18 @@ static bool append_digit_to_octet(char digit_char, uint32_t *octet_value)
 
 static const char *parse_decimal(const char *cursor, unsigned int max, uint32_t *value)
 {
-  if (!is_digit_character(*cursor))
-  {
-    return NULL;
-  }
   if (cursor[0] == '0' && is_digit_character(cursor[1]))
   {
     return NULL;
   }
 
   uint32_t parsed_value = 0;
+  if (!append_digit_to_octet(*cursor, &parsed_value))
+  {
+    return NULL;
+  }
+  cursor++;
+
   while (is_digit_character(*cursor))
   {
     if (!append_digit_to_octet(*cursor, &parsed_value))
