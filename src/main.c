@@ -49,7 +49,7 @@ static int info(const char *arg)
     return EXIT_SUCCESS;
 }
 
-static int run_lookup(int argc, char **argv)
+static int lookup(int argc, char **argv)
 {
     if (argc < 4)
     {
@@ -135,10 +135,8 @@ static int run_lookup(int argc, char **argv)
     }
     return saw_unmatched ? EXIT_NO_ROUTE_MATCH : EXIT_SUCCESS;
 }
-
 static int split(const char *block_arg, const char *count_arg)
 {
-
     cidr_t block;
     cidr_t subnet;
     uint32_t count;
@@ -158,7 +156,31 @@ static int split(const char *block_arg, const char *count_arg)
         return EXIT_BAD_CMD_OR_MALFORMED;
     }
 
-    if (!parse_count(count_arg, &count) || (count & (count - 1U)) != 0)
+    if (count_arg[0] < '1' || count_arg[0] > '9')
+    {
+        fprintf(stderr, "myapp: critical failure - split count '%s' must be a power of two from 1 up (e.g., 2, 4, 8, 16)\n", count_arg);
+        return EXIT_BAD_CMD_OR_MALFORMED;
+    }
+
+    uint64_t v = 0;
+    for (const char *p = count_arg; *p != '\0'; p++)
+    {
+        if (*p < '0' || *p > '9')
+        {
+            fprintf(stderr, "myapp: critical failure - split count '%s' must be a power of two from 1 up (e.g., 2, 4, 8, 16)\n", count_arg);
+            return EXIT_BAD_CMD_OR_MALFORMED;
+        }
+        v = v * 10 + (uint64_t)(*p - '0');
+        if (v > UINT32_MAX)
+        {
+            fprintf(stderr, "myapp: critical failure - split count '%s' must be a power of two from 1 up (e.g., 2, 4, 8, 16)\n", count_arg);
+            return EXIT_BAD_CMD_OR_MALFORMED;
+        }
+    }
+
+    count = (uint32_t)v;
+
+    if ((count & (count - 1U)) != 0)
     {
         fprintf(stderr, "myapp: critical failure - split count '%s' must be a power of two from 1 up (e.g., 2, 4, 8, 16)\n", count_arg);
         return EXIT_BAD_CMD_OR_MALFORMED;

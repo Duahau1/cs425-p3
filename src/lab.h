@@ -49,6 +49,8 @@ typedef struct
 /** A forwarding table. Its layout is private to lab.c. */
 typedef struct fwd_table fwd_table_t;
 
+uint8_t bound_prefix(uint8_t prefix);
+
 /* ------------------------------------------------------------------------
  * Task 1 - Address parsing and formatting
  * --------------------------------------------------------------------- */

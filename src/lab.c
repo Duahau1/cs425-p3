@@ -1,29 +1,40 @@
 #include "lab.h"
-#include <stdio.h>
+
+#include <ctype.h>
 #include <stdlib.h>
+#include <string.h>
+
+static bool is_space_character(char inputChar)
+{
+  return inputChar == ' ' || inputChar == '\t' || inputChar == '\n' || inputChar == '\r' || inputChar == '\v' || inputChar == '\f';
+}
 
 static bool is_digit_character(char digitChar)
 {
   return digitChar >= '0' && digitChar <= '9';
 }
 
-static uint8_t bound_prefix(uint8_t prefix)
+uint8_t bound_prefix(uint8_t prefix)
 {
   return prefix > MAXIMUM_DECIMAL_PREFIX_VALUE ? MAXIMUM_DECIMAL_PREFIX_VALUE : prefix;
 }
 
-static uint32_t octet_to_base_10(const char *cursor, uint32_t octet_value)
+static bool append_digit_to_octet(char digit_char, uint32_t *octet_value)
 {
-  uint32_t extracted_value = 0;
-
-  uint32_t digit = (unsigned int)(*cursor - '0');
-  extracted_value = octet_value * BASE_10 + digit;
-
-  if (octet_value > MAXIMUM_DECIMAL_VALUE_PER_OCTET)
+  if (digit_char < '0' || digit_char > '9')
   {
-    return NULL;
+    return false;
   }
-  return extracted_value;
+
+  uint32_t digit = (uint32_t)(digit_char - '0');
+
+  if (*octet_value > (MAXIMUM_DECIMAL_VALUE_PER_OCTET - digit) / BASE_10)
+  {
+    return false;
+  }
+
+  *octet_value = (*octet_value * BASE_10) + digit;
+  return true;
 }
 
 static const char *parse_decimal(const char *cursor, unsigned int max, uint32_t *value)
@@ -40,9 +51,7 @@ static const char *parse_decimal(const char *cursor, unsigned int max, uint32_t 
   uint32_t parsed_value = 0;
   while (is_digit_character(*cursor))
   {
-    parsed_value = octet_to_base_10(*cursor, parsed_value);
-
-    if (parsed_value == NULL)
+    if (!append_digit_to_octet(*cursor, &parsed_value))
     {
       return NULL;
     }
@@ -108,19 +117,28 @@ bool ip_parse(const char *text, uint32_t *addr)
     {
       if (*text != '.')
       {
-        return NULL;
+        return false;
       }
       text++;
     }
+
     unsigned int octet;
     text = parse_decimal(text, MAXIMUM_DECIMAL_VALUE_PER_OCTET, &octet);
     if (text == NULL)
     {
-      return NULL;
+      return false;
     }
+
     result = (result << 8) | octet;
   }
-  const char *retVal = result;
+
+  if (*text != '\0')
+  {
+    return false;
+  }
+
+  *addr = result;
+  return true;
 }
 
 void ip_format(uint32_t addr, char out[IP_STR_LEN])
@@ -293,13 +311,13 @@ bool route_parse(const char *line, route_t *route)
   }
 
   const char *start = line;
-  while (is_space(*start))
+  while (is_space_character(*start))
   {
     start++;
   }
 
   const char *end = start + strlen(start);
-  while (end > start && is_space(end[-1]))
+  while (end > start && is_space_character(end[-1]))
   {
     end--;
   }
@@ -308,14 +326,14 @@ bool route_parse(const char *line, route_t *route)
   char gateway_str[IP_STR_LEN];
   char dev_str[DEV_NAME_LEN];
 
-  const char *p = next_field(start, end, dest_str, sizeof(dest_str));
+  const char *p = scan_next_token(start, end, dest_str, sizeof(dest_str));
   if (p != NULL)
   {
-    p = next_field(p, end, gateway_str, sizeof(gateway_str));
+    p = scan_next_token(p, end, gateway_str, sizeof(gateway_str));
   }
   if (p != NULL)
   {
-    p = next_field(p, end, dev_str, sizeof(dev_str));
+    p = scan_next_token(p, end, dev_str, sizeof(dev_str));
   }
 
   if (p == NULL || p != end)
@@ -354,7 +372,7 @@ bool route_parse(const char *line, route_t *route)
 
   for (const char *c = dev_str; *c != '\0'; c++)
   {
-    if (is_space(*c))
+    if (is_space_character(*c))
     {
       return false;
     }
@@ -393,11 +411,11 @@ bool table_add(fwd_table_t *table, const route_t *route)
   }
 
   // Check for duplicate routes using normalized prefix comparison
-  uint8_t normalized_prefix = clamp_prefix(route->dest.prefix);
+  uint8_t normalized_prefix = bound_prefix(route->dest.prefix);
   for (size_t i = 0; i < table->count; ++i)
   {
     const cidr_t *existing_dest = &table->routes[i].dest;
-    if (existing_dest->addr == route->dest.addr && clamp_prefix(existing_dest->prefix) == normalized_prefix)
+    if (existing_dest->addr == route->dest.addr && bound_prefix(existing_dest->prefix) == normalized_prefix)
     {
       return false; // Route already exists
     }
@@ -451,7 +469,7 @@ bool table_load(fwd_table_t *table, FILE *in, size_t *bad_line)
     }
 
     const char *cursor = line_buffer;
-    while (is_space(*cursor))
+    while (is_space_character(*cursor))
     {
       cursor++;
     }
@@ -499,7 +517,7 @@ const route_t *table_lookup(const fwd_table_t *table, uint32_t dest)
     if (cidr_contains(candidate_route->dest, dest))
     {
       if (best_match == NULL ||
-          clamp_prefix(candidate_route->dest.prefix) > clamp_prefix(best_match->dest.prefix))
+          bound_prefix(candidate_route->dest.prefix) > bound_prefix(best_match->dest.prefix))
       {
         best_match = candidate_route;
       }
