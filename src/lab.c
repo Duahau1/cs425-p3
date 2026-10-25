@@ -193,9 +193,13 @@ bool cidr_parse(const char *text, cidr_t *block)
 void cidr_format(cidr_t block, char out[CIDR_STR_LEN])
 {
   char address[IP_STR_LEN];
+  unsigned int prefix = block.prefix;
+  if (prefix > MAXIMUM_DECIMAL_PREFIX_VALUE)
+  {
+    prefix = MAXIMUM_DECIMAL_PREFIX_VALUE;
+  }
   ip_format(block.addr, address);
-  (void)snprintf(out, CIDR_STR_LEN, "%s/%u", address,
-                 bound_prefix(block.prefix));
+  (void)snprintf(out, CIDR_STR_LEN, "%s/%u", address, prefix);
 }
 
 /* ------------------------------------------------------------------------
