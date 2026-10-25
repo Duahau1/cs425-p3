@@ -19,7 +19,7 @@ uint8_t bound_prefix(uint8_t prefix)
   return prefix > MAXIMUM_DECIMAL_PREFIX_VALUE ? MAXIMUM_DECIMAL_PREFIX_VALUE : prefix;
 }
 
-static bool append_digit_to_octet(char digit_char, uint32_t *octet_value)
+static bool append_digit_to_octet(char digit_char, uint32_t max, uint32_t *octet_value)
 {
   if (digit_char < '0' || digit_char > '9')
   {
@@ -28,7 +28,7 @@ static bool append_digit_to_octet(char digit_char, uint32_t *octet_value)
 
   uint32_t digit = (uint32_t)(digit_char - '0');
 
-  if (*octet_value > (MAXIMUM_DECIMAL_VALUE_PER_OCTET - digit) / BASE_10)
+  if (*octet_value > (max - digit) / BASE_10)
   {
     return false;
   }
@@ -37,23 +37,23 @@ static bool append_digit_to_octet(char digit_char, uint32_t *octet_value)
   return true;
 }
 
-static const char *parse_decimal(const char *cursor, unsigned int max, uint32_t *value)
+static const char *parse_decimal(const char *cursor, uint32_t max, uint32_t *value)
 {
+  if (!is_digit_character(*cursor))
+  {
+    return NULL;
+  }
+
   if (cursor[0] == '0' && is_digit_character(cursor[1]))
   {
     return NULL;
   }
 
   uint32_t parsed_value = 0;
-  if (!append_digit_to_octet(*cursor, &parsed_value))
-  {
-    return NULL;
-  }
-  cursor++;
 
   while (is_digit_character(*cursor))
   {
-    if (!append_digit_to_octet(*cursor, &parsed_value))
+    if (!append_digit_to_octet(*cursor, max, &parsed_value))
     {
       return NULL;
     }
@@ -288,7 +288,7 @@ bool cidr_subnet(cidr_t block, uint32_t n, uint32_t i, cidr_t *out)
   uint64_t subnet_size = UINT64_C(1) << (32U - prefix);
   *out = (cidr_t){
       .addr = (uint32_t)((uint64_t)block.addr + (uint64_t)i * subnet_size),
-      .prefix = prefix};
+      .prefix = (unsigned char)prefix};
 
   return true;
 }
