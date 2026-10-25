@@ -1,3 +1,6 @@
 ./build/release/myapp info 192.168.1.0/24
 ./build/release/myapp lookup tables/example.txt 132.178.227.50 8.8.8.8 10.1.2.5
 ./build/release/myapp split 192.168.1.0/24 4
+
+./build/release/myapp lookup tables/advance.txt 192.168.1.35 8.8.8.8 192.168.1.50
+./build/release/myapp lookup tables/bad.txt 192.168.1.35

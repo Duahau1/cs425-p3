@@ -1,0 +1,29 @@
+# ==============================================================================
+# ADVANCED / TRICKY ROUTING TABLE TEST FILE
+# Tests longest-prefix matching, default routes, comments, malformed lines,
+# various gateway configurations, and interface name bounds.
+# ==============================================================================
+
+# 1. Standard direct route and general networks
+192.168.1.0/24      direct          eth0
+10.0.0.0/8          192.168.1.1     eth0
+
+# 2. Overlapping prefixes (tests Longest Prefix Match / LPM logic)
+# A destination like 192.168.1.50 should match /26 instead of /24 or /8
+192.168.1.0/26      direct          eth1
+192.168.1.32/28     192.168.1.5     eth2
+
+# 3. Edge-case prefixes (/0 default route and /32 host route)
+default             192.168.1.254   gateway0
+127.0.0.1/32        direct          lo
+
+# 4. Unusual whitespace handling (mix of tabs and spaces, trailing spaces)
+172.16.0.0/16	    direct	    vlan100   
+    # Indented comment line with leading spaces
+
+# 5. Classless / odd-prefix boundary tests
+203.0.113.0/24      direct          tun0
+203.0.113.128/25    203.0.113.1     tun1
+
+# 6. Gateway IP with different interface naming styles
+198.51.100.0/24     10.99.99.99     eth-blue_0
